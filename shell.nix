@@ -1,19 +1,26 @@
 let
   moz_overlay = import (builtins.fetchTarball https://github.com/mozilla/nixpkgs-mozilla/archive/master.tar.gz);
   nixpkgs = import <nixpkgs> { overlays = [ moz_overlay ]; };
+  nixpkgs-unstable = import <nixpkgs-unstable> { };
+  binaryen = (import (builtins.fetchTarball {
+    url = "https://github.com/nixos/nixpkgs/archive/7b1e56acf0674cfc777f47386153e6f5ba9b34a8.tar.gz";
+  }) {}).binaryen;
+  rustChannel = nixpkgs.rustChannelOf { rustToolchain = ./rust-toolchain; };
 in
 with nixpkgs;
 stdenv.mkDerivation {
-  name = "lever-finance";
+  name = "forecast-contracts";
+  src = ./.;
+
   buildInputs = [
-    # latest stable wasm toolchain
-    (latest.rustChannels.stable.rust.override {
-      targets = ["wasm32-unknown-unknown"];
+    (rustChannel.rust.override {
+      targets = [ "wasm32-unknown-unknown" ];
     })
-    latest.rustChannels.stable.rust-src
+    binaryen
     nodejs
     git
     nodePackages.typescript
+    nodePackages.yarn
   ];
 
   RUST_SRC_PATH = "${rustPlatform.rustLibSrc}";
